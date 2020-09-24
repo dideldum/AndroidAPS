@@ -1,7 +1,6 @@
 package info.nightscout.androidaps.watchfaces;
 
 import android.content.Context;
-import android.graphics.Color;
 import android.graphics.DashPathEffect;
 import android.preference.PreferenceManager;
 import android.text.format.DateFormat;
@@ -18,6 +17,7 @@ import java.util.TimeZone;
 import info.nightscout.androidaps.data.BasalWatchData;
 import info.nightscout.androidaps.data.BgWatchData;
 import info.nightscout.androidaps.data.BolusWatchData;
+import info.nightscout.androidaps.data.RawDisplayData;
 import info.nightscout.androidaps.data.TempWatchData;
 import lecho.lib.hellocharts.model.Axis;
 import lecho.lib.hellocharts.model.AxisValue;
@@ -113,6 +113,42 @@ public class BgGraphBuilder {
         this.end_time = System.currentTimeMillis() + (1000 * 60 * 6 * timespan); //Now plus 30 minutes padding (for 5 hours. Less if less.)
         this.predictionEndTime = getPredictionEndTime();
         this.end_time = (predictionEndTime>end_time)?predictionEndTime:end_time;
+    }
+
+    public BgGraphBuilder(Context context, RawDisplayData raw, int aPointSize, int aHighColor, int aLowColor, int aMidColor, int gridColour, int basalBackgroundColor, int basalCenterColor, int bolusInvalidColor, int carbsColor, int timespan) {
+        this(context,
+                raw.bgDataList,
+                raw.predictionList,
+                raw.tempWatchDataList,
+                raw.basalWatchDataList,
+                raw.bolusWatchDataList,
+                aPointSize,
+                aHighColor,
+                aLowColor,
+                aMidColor,
+                gridColour,
+                basalBackgroundColor,
+                basalCenterColor,
+                bolusInvalidColor,
+                carbsColor,
+                timespan);
+    }
+
+    public BgGraphBuilder(Context context, RawDisplayData raw, int aPointSize, int aMidColor, int gridColour, int basalBackgroundColor, int basalCenterColor, int bolusInvalidColor, int carbsColor, int timespan) {
+        this(context,
+                raw.bgDataList,
+                raw.predictionList,
+                raw.tempWatchDataList,
+                raw.basalWatchDataList,
+                raw.bolusWatchDataList,
+                aPointSize,
+                aMidColor,
+                gridColour,
+                basalBackgroundColor,
+                basalCenterColor,
+                bolusInvalidColor,
+                carbsColor,
+                timespan);
     }
 
     public LineChartData lineData() {
@@ -360,8 +396,8 @@ public class BgGraphBuilder {
         if(singleLine) {
             for (BgWatchData bgReading : bgDataList) {
                 if(bgReading.timestamp > start_time) {
-                    if (bgReading.sgv >= 400) {
-                        inRangeValues.add(new PointValue(fuzz(bgReading.timestamp), (float) 400));
+                    if (bgReading.sgv >= 450) {
+                        inRangeValues.add(new PointValue(fuzz(bgReading.timestamp), (float) 450));
                     } else if (bgReading.sgv >= highMark) {
                         inRangeValues.add(new PointValue(fuzz(bgReading.timestamp), (float) bgReading.sgv));
                     } else if (bgReading.sgv >= lowMark) {
@@ -376,8 +412,8 @@ public class BgGraphBuilder {
         } else {
             for (BgWatchData bgReading : bgDataList) {
                 if (bgReading.timestamp > start_time) {
-                    if (bgReading.sgv >= 400) {
-                        highValues.add(new PointValue(fuzz(bgReading.timestamp), (float) 400));
+                    if (bgReading.sgv >= 450) {
+                        highValues.add(new PointValue(fuzz(bgReading.timestamp), (float) 450));
                     } else if (bgReading.sgv >= highMark) {
                         highValues.add(new PointValue(fuzz(bgReading.timestamp), (float) bgReading.sgv));
                     } else if (bgReading.sgv >= lowMark) {

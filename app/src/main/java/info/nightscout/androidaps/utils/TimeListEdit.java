@@ -13,29 +13,28 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.core.content.ContextCompat;
 import androidx.core.widget.TextViewCompat;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
 
-import info.nightscout.androidaps.MainApp;
 import info.nightscout.androidaps.R;
+import info.nightscout.androidaps.logging.AAPSLogger;
+import info.nightscout.androidaps.utils.ui.NumberPicker;
 
 /**
  * Created by mike on 29.12.2016.
  */
 
 public class TimeListEdit {
-    private static Logger log = LoggerFactory.getLogger(TimeListEdit.class);
+    private final AAPSLogger aapsLogger;
+    private final DateUtil dateUtil;
 
     private final int ONEHOURINSECONDS = 60 * 60;
 
@@ -50,6 +49,7 @@ public class TimeListEdit {
     private Context context;
     private View view;
     private int resLayoutId;
+    private String tagPrefix;
     private String label;
     private JSONArray data1;
     private JSONArray data2;
@@ -63,10 +63,17 @@ public class TimeListEdit {
     private int inflatedUntil = -1;
 
 
-    public TimeListEdit(Context context, View view, int resLayoutId, String label, JSONArray data1, JSONArray data2, double min, double max, double step, NumberFormat formatter, Runnable save) {
+    public TimeListEdit(
+            Context context,
+            AAPSLogger aapsLogger,
+            DateUtil dateUtil,
+            View view, int resLayoutId, String tagPrefix, String label, JSONArray data1, JSONArray data2, double min, double max, double step, NumberFormat formatter, Runnable save) {
         this.context = context;
+        this.aapsLogger = aapsLogger;
+        this.dateUtil = dateUtil;
         this.view = view;
         this.resLayoutId = resLayoutId;
+        this.tagPrefix = tagPrefix;
         this.label = label;
         this.data1 = data1;
         this.data2 = data2;
@@ -84,11 +91,11 @@ public class TimeListEdit {
 
         textlabel = new TextView(context);
         textlabel.setText(label);
-        textlabel.setGravity(Gravity.START);
+        textlabel.setGravity(Gravity.CENTER);
         LinearLayout.LayoutParams llp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        llp.setMargins(10, 0, 0, 0); // llp.setMargins(left, top, right, bottom);
+        llp.setMargins(0, 5, 0, 5);
         textlabel.setLayoutParams(llp);
-        textlabel.setBackgroundColor(ContextCompat.getColor(MainApp.instance(), R.color.linearBlockBackground));
+        //textlabel.setBackgroundColor(ContextCompat.getColor(MainApp.instance(), R.color.linearBlockBackground));
         TextViewCompat.setTextAppearance(textlabel, android.R.style.TextAppearance_Medium);
         layout.addView(textlabel);
 
@@ -100,7 +107,7 @@ public class TimeListEdit {
         // last "plus" to append new interval
         float factor = layout.getContext().getResources().getDisplayMetrics().density;
         finalAdd = new ImageView(context);
-        finalAdd.setImageResource(R.drawable.add);
+        finalAdd.setImageResource(R.drawable.ic_add);
         LinearLayout.LayoutParams illp = new LinearLayout.LayoutParams((int) (35d * factor), (int) (35 * factor));
         illp.setMargins(0, 25, 0, 25); // llp.setMargins(left, top, right, bottom);
         illp.gravity = Gravity.CENTER;
@@ -119,7 +126,8 @@ public class TimeListEdit {
     private void inflateRow(final int position) {
 
         LayoutInflater inflater = LayoutInflater.from(context);
-        View childView = intervals[position] = inflater.inflate(R.layout.timelistedit_element, layout, false);
+        int resource = data2 == null ? R.layout.timelistedit_element : R.layout.timelistedit_element_vertical;
+        View childView = intervals[position] = inflater.inflate(resource, layout, false);
         spinners[position] = new SpinnerHelper(childView.findViewById(R.id.timelistedit_time));
         numberPickers1[position] = childView.findViewById(R.id.timelistedit_edit1);
         numberPickers2[position] = childView.findViewById(R.id.timelistedit_edit2);
@@ -184,7 +192,7 @@ public class TimeListEdit {
                                       int before, int count) {
             }
         });
-
+        numberPickers1[position].setTag(tagPrefix +"-1-" + position);
 
         numberPickers2[position].setTextWatcher(new TextWatcher() {
             @Override
@@ -204,6 +212,7 @@ public class TimeListEdit {
                                       int before, int count) {
             }
         });
+        numberPickers2[position].setTag(tagPrefix +"-2-" + position);
 
         layout.addView(childView);
     }
@@ -276,7 +285,7 @@ public class TimeListEdit {
         ArrayList<Integer> timeListValues = new ArrayList<>();
         int pos = 0;
         for (int t = previous + ONEHOURINSECONDS; t < next; t += ONEHOURINSECONDS) {
-            timeList.add(DateUtil.timeStringFromSeconds(t));
+            timeList.add(dateUtil.timeStringFromSeconds(t));
             timeListValues.add(t);
             if (secondsFromMidnight == t) posInList = pos;
             pos++;
@@ -306,7 +315,7 @@ public class TimeListEdit {
                 return time;
             }
         } catch (JSONException e) {
-            log.error("Unhandled exception", e);
+            aapsLogger.error("Unhandled exception", e);
         }
         return 0;
     }
@@ -318,7 +327,7 @@ public class TimeListEdit {
                 return item.getDouble("value");
             }
         } catch (JSONException e) {
-            log.error("Unhandled exception", e);
+            aapsLogger.error("Unhandled exception", e);
         }
         return 0d;
     }
@@ -331,7 +340,7 @@ public class TimeListEdit {
                     return item.getDouble("value");
                 }
             } catch (JSONException e) {
-                log.error("Unhandled exception", e);
+                aapsLogger.error("Unhandled exception", e);
             }
         }
         return 0d;
@@ -357,7 +366,7 @@ public class TimeListEdit {
                 data2.put(index, newObject2);
             }
         } catch (JSONException e) {
-            log.error("Unhandled exception", e);
+            aapsLogger.error("Unhandled exception", e);
         }
 
     }
@@ -378,7 +387,7 @@ public class TimeListEdit {
             // add new object
             editItem(index, timeAsSeconds, value1, value2);
         } catch (JSONException e) {
-            log.error("Unhandled exception", e);
+            aapsLogger.error("Unhandled exception", e);
         }
 
     }
@@ -391,7 +400,7 @@ public class TimeListEdit {
 
     private void log() {
         for (int i = 0; i < data1.length(); i++) {
-            log.debug(i + ": @" + DateUtil.timeStringFromSeconds(secondFromMidnight(i)) + " " + value1(i) + (data2 != null ? " " + value2(i) : ""));
+            aapsLogger.debug(i + ": @" + dateUtil.timeStringFromSeconds(secondFromMidnight(i)) + " " + value1(i) + (data2 != null ? " " + value2(i) : ""));
         }
     }
 
